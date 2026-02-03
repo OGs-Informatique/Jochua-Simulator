@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Jochua Simulator | Full Details & Drift</title>
+    <title>Jochua Simulator | Fast Flash & Drift</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Orbitron', sans-serif; }
@@ -13,7 +13,8 @@
         }
         .stat { font-size: 56px; font-weight: 900; line-height: 0.9; }
         .label { font-size: 14px; opacity: 0.8; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 5px; }
-        #flash { position: absolute; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 20; transition: opacity 0.1s; }
+        /* Transition plus rapide pour le flash */
+        #flash { position: absolute; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 20; transition: opacity 0.05s; }
         #controls { position: absolute; bottom: 20px; left: 30px; color: white; font-size: 11px; opacity: 0.8; line-height: 1.4; }
     </style>
 </head>
@@ -25,7 +26,7 @@
     </div>
     <div id="controls">
         Z/S: Gaz/Reculer | A: Cligno G | E: Cligno D | G: Warnings | L: Phares<br>
-        <b>TOUT EST LÀ : Détails, Terrain, Drift et Poteaux !</b>
+        <b>FLASH ROUGE RÉDUIT : Plus de visibilité après un choc !</b>
     </div>
 
     <script type="importmap">
@@ -70,7 +71,7 @@
             worldGroup = new THREE.Group();
             scene.add(worldGroup);
 
-            // --- LE TERRAIN (REMIS) ---
+            // TERRAIN
             const road = new THREE.Mesh(new THREE.PlaneGeometry(25, WORLD_SIZE), new THREE.MeshStandardMaterial({ color: 0x111111 }));
             road.rotation.x = -Math.PI / 2; road.position.z = -WORLD_SIZE/2 + 50;
             worldGroup.add(road);
@@ -86,7 +87,7 @@
             worldGroup.add(plainL);
             const plainR = plainL.clone(); plainR.position.x = 512.5; worldGroup.add(plainR);
 
-            // --- OBSTACLES ---
+            // OBSTACLES INFINIS
             for(let i = 0; i < 35; i++) {
                 const obs = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 15, 16), new THREE.MeshStandardMaterial({color: 0xff0000}));
                 obs.position.set(Math.random() * 40 - 20, 7.5, -i * 120 - 100);
@@ -94,7 +95,7 @@
                 obstacles.push(obs);
             }
 
-            // --- LA BMW JOCHUA (DÉTAILS COMPLETS REMIS) ---
+            // BMW JOCHUA
             car = new THREE.Group();
             car.position.y = 1.1; scene.add(car);
             const bodyMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.9, roughness: 0.1 });
@@ -106,25 +107,22 @@
             const roof = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 2.6), glassMat);
             roof.position.set(0, 0.5, 0.1); car.add(roof);
 
-            // Calandre Double Rein
             const gL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.5, 0.1), chromeMat);
             gL.position.set(0.3, -0.05, -2.4);
             const gR = gL.clone(); gR.position.x = -0.3; car.add(gL, gR);
 
-            // Rétros et Aileron
             const mirL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.1, 0.2), bodyMat);
             mirL.position.set(1.25, 0.4, -0.8);
             const mirR = mirL.clone(); mirR.position.x = -1.25; car.add(mirL, mirR);
             const wing = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.05, 0.8), bodyMat);
             wing.position.set(0, 0.65, 2.2); car.add(wing);
 
-            // 4 Pots
             for(let x of [-0.6, -0.4, 0.4, 0.6]) {
                 const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4), chromeMat);
                 ex.rotation.x = Math.PI/2; ex.position.set(x, -0.2, 2.4); car.add(ex);
             }
 
-            // LUMIÈRES ET PROJECTIONS
+            // PHARES & FEUX
             meshHeadL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.1), offLightMat.clone());
             meshHeadL.position.set(0.85, 0.1, -2.4);
             meshHeadR = meshHeadL.clone(); meshHeadR.position.x = -0.85; car.add(meshHeadL, meshHeadR);
@@ -139,10 +137,8 @@
             meshRearL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.1), offLightMat.clone());
             meshRearL.position.set(0.85, 0.1, 2.4);
             meshRearR = meshRearL.clone(); meshRearR.position.x = -0.85; car.add(meshRearL, meshRearR);
-
             const pL = new THREE.PointLight(0xff0000, 0, 12); pL.position.set(0.85, 0.1, 2.5);
-            const pR = pL.clone(); pR.position.x = -0.85; car.add(pL, pR); 
-            taillightProjections = [pL, pR];
+            const pR = pL.clone(); pR.position.x = -0.85; car.add(pL, pR); taillightProjections = [pL, pR];
 
             meshBlinkL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.1), offLightMat.clone());
             meshBlinkL.position.set(0.85, 0.25, -2.41);
@@ -155,12 +151,6 @@
             });
 
             animate();
-        }
-
-        function spawnPart(x, y, z, color = 0xcccccc) {
-            const p = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.5}));
-            const wp = new THREE.Vector3(x, y, z).applyMatrix4(car.matrixWorld);
-            p.position.copy(wp); scene.add(p); particles.push({ mesh: p, life: 1.0 });
         }
 
         window.onkeydown = (e) => {
@@ -191,7 +181,7 @@
             worldGroup.position.z += Math.cos(angle) * speed * 10;
             worldGroup.position.x += Math.sin(angle) * speed * 10;
 
-            // RECYCLAGE POTEAUX
+            // RECYCLAGE POTEAUX & CHOC COURT
             obstacles.forEach(obs => {
                 const wp = new THREE.Vector3(); obs.getWorldPosition(wp);
                 if(wp.z > 50) {
@@ -200,7 +190,8 @@
                 }
                 if(Math.sqrt(wp.x**2 + wp.z**2) < 2.5) {
                     document.getElementById('flash').style.opacity = '1';
-                    setTimeout(() => document.getElementById('flash').style.opacity = '0', 150);
+                    // DURÉE DU FLASH RÉDUITE À 50ms
+                    setTimeout(() => document.getElementById('flash').style.opacity = '0', 50);
                     speed = 0; 
                 }
             });
@@ -220,7 +211,10 @@
 
             // DRIFT FUMÉE
             if(Math.abs(angle - driftAngle) > 0.06 && Math.abs(speed) > 0.4) {
-                spawnPart(1.1, -0.4, 1.7, 0x333333); spawnPart(-1.1, -0.4, 1.7, 0x333333);
+                const p = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), new THREE.MeshBasicMaterial({color: 0x333333, transparent: true, opacity: 0.5}));
+                p.position.copy(new THREE.Vector3(0, -0.4, 1.7).applyMatrix4(car.matrixWorld));
+                scene.add(p);
+                particles.push({ mesh: p, life: 1.0 });
             }
 
             particles.forEach((p, i) => {
